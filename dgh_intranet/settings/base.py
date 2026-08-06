@@ -91,7 +91,8 @@ AUTH_USER_MODEL = "accounts.User"
 
 # Auth
 LOGIN_URL = "login"
-LOGIN_REDIRECT_URL = "/admin/"  # no other authenticated view exists yet
+LOGIN_REDIRECT_URL = "/documents/"
+LOGOUT_REDIRECT_URL = "/accounts/login/"
 
 
 # Password validation

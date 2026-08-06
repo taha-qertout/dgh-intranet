@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block title %}{{ document.title }} – Intranet DGH{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h1 class="card-title h4 mb-3">{{ document.title }}</h1>
+
+        <dl class="row">
+            <dt class="col-sm-3">Catégorie</dt>
+            <dd class="col-sm-9">{{ document.get_category_display }}</dd>
+
+            <dt class="col-sm-3">Département</dt>
+            <dd class="col-sm-9">{{ document.department }}</dd>
+
+            <dt class="col-sm-3">Ajouté par</dt>
+            <dd class="col-sm-9">{{ document.uploaded_by }}</dd>
+
+            <dt class="col-sm-3">Date d'ajout</dt>
+            <dd class="col-sm-9">{{ document.uploaded_at }}</dd>
+
+            {% if document.description %}
+            <dt class="col-sm-3">Description</dt>
+            <dd class="col-sm-9">{{ document.description }}</dd>
+            {% endif %}
+        </dl>
+
+        <a href="{% url 'documents:document_download' document.pk %}" class="btn btn-primary">
+            Télécharger
+        </a>
+    </div>
+</div>
+{% endblock %}
