@@ -1,5 +1,19 @@
 from django.conf import settings
+from django.core.exceptions import ValidationError
+from django.core.validators import FileExtensionValidator
 from django.db import models
+
+
+def validate_file_size(value):
+    max_size = 10 * 1024 * 1024
+    if value.size > max_size:
+        raise ValidationError("Le fichier ne doit pas dépasser 10 Mo.")
+
+
+validate_file_extension = FileExtensionValidator(
+    allowed_extensions=["pdf", "doc", "docx", "xls", "xlsx", "png", "jpg", "jpeg"],
+    message="Type de fichier non autorisé. Formats acceptés : PDF, Word, Excel, images.",
+)
 
 
 class DocumentQuerySet(models.QuerySet):
@@ -26,7 +40,9 @@ class Document(models.Model):
     title = models.CharField(max_length=200, verbose_name="Titre")
     description = models.TextField(blank=True, verbose_name="Description")
     file = models.FileField(
-        upload_to="documents/%Y/%m/", verbose_name="Fichier"
+        upload_to="documents/%Y/%m/",
+        validators=[validate_file_size, validate_file_extension],
+        verbose_name="Fichier",
     )
     department = models.ForeignKey(
         "core.Department",

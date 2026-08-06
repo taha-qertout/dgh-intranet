@@ -29,6 +29,11 @@
         <a href="{% url 'documents:document_download' document.pk %}" class="btn btn-primary">
             Télécharger
         </a>
+        {% if user.role == "chef" or user.role == "admin" %}
+        <a href="{% url 'documents:document_delete' document.pk %}" class="btn btn-outline-danger">
+            Supprimer
+        </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}

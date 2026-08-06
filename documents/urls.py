@@ -12,4 +12,10 @@ urlpatterns = [
         views.document_download,
         name="document_download",
     ),
+    path("ajouter/", views.DocumentUploadView.as_view(), name="document_upload"),
+    path(
+        "<int:pk>/supprimer/",
+        views.DocumentDeleteView.as_view(),
+        name="document_delete",
+    ),
 ]
