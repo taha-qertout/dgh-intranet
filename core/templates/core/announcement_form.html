@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+
+{% block title %}Publier une annonce – Intranet DGH{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-7">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title h4 mb-3">Publier une annonce</h1>
+                <form method="post">
+                    {% csrf_token %}
+                    {{ form.as_p }}
+                    <button type="submit" class="btn btn-primary">Publier</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

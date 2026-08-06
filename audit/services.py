@@ -5,13 +5,20 @@ from .models import AuditLog
 logger = logging.getLogger(__name__)
 
 
-def log_action(action, user=None, document=None, request=None, username=None):
+def log_action(
+    action, user=None, document=None, announcement=None, request=None, username=None
+):
     """Single entry point for writing audit entries.
 
     `username` is an explicit override for callers that have an attempted
     username but no User instance — namely the user_login_failed signal,
     which only provides submitted credentials, not a resolved user. When
     given, it wins over deriving the username from `user`.
+
+    `announcement` reuses the `document_title` field for the announcement's
+    title (see AuditLog.document_title) rather than adding a parallel
+    field — there's no separate FK for it, only the derived department and
+    title text.
     """
     resolved_user = user if user is not None and user.is_authenticated else None
 
@@ -24,12 +31,21 @@ def log_action(action, user=None, document=None, request=None, username=None):
 
     if document is not None:
         department = document.department
+    elif announcement is not None:
+        # Announcement.department is meaningful when None (org-wide), so
+        # it is used as-is and must NOT fall back to the user's department.
+        department = announcement.department
     elif resolved_user is not None and resolved_user.department:
         department = resolved_user.department
     else:
         department = None
 
-    document_title = document.title if document is not None else ""
+    if document is not None:
+        document_title = document.title
+    elif announcement is not None:
+        document_title = announcement.title
+    else:
+        document_title = ""
 
     ip_address = None
     if request is not None:

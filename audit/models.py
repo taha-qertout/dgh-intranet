@@ -11,6 +11,8 @@ class AuditLog(models.Model):
         DOCUMENT_UPLOAD = "document_upload", "Ajout d'un document"
         DOCUMENT_DOWNLOAD = "document_download", "Téléchargement d'un document"
         DOCUMENT_DELETE = "document_delete", "Suppression d'un document"
+        ANNOUNCEMENT_CREATE = "announcement_create", "Publication d'une annonce"
+        ANNOUNCEMENT_DELETE = "announcement_delete", "Suppression d'une annonce"
 
     action = models.CharField(
         max_length=30, choices=Action.choices, verbose_name="Action"

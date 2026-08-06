@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}{{ announcement.title }} – Intranet DGH{% endblock %}
+
+{% block content %}
+<div class="card">
+    <div class="card-body">
+        <h1 class="card-title h4 mb-3">{{ announcement.title }}</h1>
+
+        <dl class="row">
+            <dt class="col-sm-3">Département</dt>
+            <dd class="col-sm-9">
+                {% if announcement.department %}
+                    {{ announcement.department }}
+                {% else %}
+                    Toute la direction
+                {% endif %}
+            </dd>
+
+            <dt class="col-sm-3">Publié par</dt>
+            <dd class="col-sm-9">{{ announcement.posted_by }}</dd>
+
+            <dt class="col-sm-3">Date de publication</dt>
+            <dd class="col-sm-9">{{ announcement.published_at }}</dd>
+        </dl>
+
+        <p class="card-text" style="white-space: pre-line;">{{ announcement.body }}</p>
+
+        {% if user.role == "chef" or user.role == "admin" %}
+        <a href="{% url 'announcements:announcement_delete' announcement.pk %}" class="btn btn-outline-danger">
+            Supprimer
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

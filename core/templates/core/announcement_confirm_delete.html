@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+
+{% block title %}Supprimer une annonce – Intranet DGH{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-body">
+                <h1 class="card-title h4 mb-3">Supprimer une annonce</h1>
+                <p>
+                    Voulez-vous vraiment supprimer l'annonce
+                    « {{ announcement.title }} » ?
+                </p>
+                <form method="post">
+                    {% csrf_token %}
+                    <a href="{% url 'announcements:announcement_detail' announcement.pk %}" class="btn btn-secondary">
+                        Annuler
+                    </a>
+                    <button type="submit" class="btn btn-danger">Supprimer</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

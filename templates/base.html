@@ -16,6 +16,9 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'documents:document_list' %}">Documents</a>
                     </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'announcements:announcement_list' %}">Annonces</a>
+                    </li>
                     {% if user.is_staff %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'admin:index' %}">Administration</a>

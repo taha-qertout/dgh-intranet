@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+
+{% block title %}Annonces – Intranet DGH{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h1 class="h4 mb-0">Annonces</h1>
+    {% if user.role == "chef" or user.role == "admin" %}
+    <a href="{% url 'announcements:announcement_create' %}" class="btn btn-primary">
+        Publier une annonce
+    </a>
+    {% endif %}
+</div>
+
+{% if announcements %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Titre</th>
+                <th>Département</th>
+                <th>Publié par</th>
+                <th>Date de publication</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for announcement in announcements %}
+            <tr>
+                <td>
+                    <a href="{% url 'announcements:announcement_detail' announcement.pk %}">{{ announcement.title }}</a>
+                </td>
+                <td>
+                    {% if announcement.department %}
+                        {{ announcement.department }}
+                    {% else %}
+                        Toute la direction
+                    {% endif %}
+                </td>
+                <td>{{ announcement.posted_by }}</td>
+                <td>{{ announcement.published_at }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+{% if is_paginated %}
+<nav aria-label="Pagination">
+    <ul class="pagination">
+        {% if page_obj.has_previous %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.previous_page_number }}">Précédent</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Précédent</span></li>
+        {% endif %}
+
+        <li class="page-item disabled">
+            <span class="page-link">Page {{ page_obj.number }} sur {{ page_obj.paginator.num_pages }}</span>
+        </li>
+
+        {% if page_obj.has_next %}
+        <li class="page-item">
+            <a class="page-link" href="?page={{ page_obj.next_page_number }}">Suivant</a>
+        </li>
+        {% else %}
+        <li class="page-item disabled"><span class="page-link">Suivant</span></li>
+        {% endif %}
+    </ul>
+</nav>
+{% endif %}
+
+{% else %}
+<p>Aucune annonce disponible.</p>
+{% endif %}
+{% endblock %}
