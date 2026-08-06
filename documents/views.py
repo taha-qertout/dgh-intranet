@@ -8,6 +8,8 @@ from django.urls import reverse_lazy
 from django.views.generic import CreateView, DetailView, ListView
 
 from accounts.mixins import RoleRequiredMixin
+from audit.models import AuditLog
+from audit.services import log_action
 
 from .forms import DocumentUploadForm
 from .models import Document
@@ -35,6 +37,12 @@ def document_download(request, pk):
     document = get_object_or_404(
         Document.objects.visible_to(request.user), pk=pk
     )
+    log_action(
+        AuditLog.Action.DOCUMENT_DOWNLOAD,
+        user=request.user,
+        document=document,
+        request=request,
+    )
     filename = os.path.basename(document.file.name)
     return FileResponse(
         document.file.open("rb"), as_attachment=True, filename=filename
@@ -51,7 +59,14 @@ class DocumentUploadView(RoleRequiredMixin, CreateView):
     def form_valid(self, form):
         form.instance.uploaded_by = self.request.user
         form.instance.department = self.request.user.department
-        return super().form_valid(form)
+        response = super().form_valid(form)
+        log_action(
+            AuditLog.Action.DOCUMENT_UPLOAD,
+            user=self.request.user,
+            document=self.object,
+            request=self.request,
+        )
+        return response
 
 
 class DocumentDeleteView(RoleRequiredMixin, DetailView):
@@ -66,4 +81,10 @@ class DocumentDeleteView(RoleRequiredMixin, DetailView):
         document = self.get_object()
         document.is_active = False
         document.save()
+        log_action(
+            AuditLog.Action.DOCUMENT_DELETE,
+            user=request.user,
+            document=document,
+            request=request,
+        )
         return redirect("documents:document_list")
