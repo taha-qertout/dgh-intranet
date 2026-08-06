@@ -132,3 +132,9 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+# Media files (user uploads)
+# Not wired into urls.py: downloads go through a permission-checked view,
+# not direct media URLs.
+MEDIA_ROOT = BASE_DIR / "media"
+MEDIA_URL = "/media/"
