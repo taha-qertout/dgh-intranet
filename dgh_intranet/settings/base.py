@@ -89,6 +89,10 @@ DATABASES = {
 # Custom user model — must exist before the first migration ever runs.
 AUTH_USER_MODEL = "accounts.User"
 
+# Auth
+LOGIN_URL = "login"
+LOGIN_REDIRECT_URL = "/admin/"  # no other authenticated view exists yet
+
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
