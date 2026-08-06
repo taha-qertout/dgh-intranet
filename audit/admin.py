@@ -15,6 +15,7 @@ class AuditLogAdmin(admin.ModelAdmin):
     ]
     list_filter = ["action", "department"]
     search_fields = ["username", "document_title"]
+    date_hierarchy = "timestamp"
 
     def has_add_permission(self, request):
         return False

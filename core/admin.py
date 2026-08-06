@@ -13,3 +13,4 @@ class AnnouncementAdmin(admin.ModelAdmin):
     list_display = ["title", "department", "posted_by", "published_at", "is_active"]
     list_filter = ["department", "is_active"]
     search_fields = ["title"]
+    date_hierarchy = "published_at"
