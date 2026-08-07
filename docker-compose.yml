@@ -1,0 +1,31 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: dgh_intranet
+      POSTGRES_USER: dgh_intranet
+      # Dev-only local credential, not a real secret.
+      POSTGRES_PASSWORD: devpassword
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  web:
+    build: .
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    environment:
+      DJANGO_SETTINGS_MODULE: dgh_intranet.settings.dev
+      DB_ENGINE: django.db.backends.postgresql
+      DB_NAME: dgh_intranet
+      DB_USER: dgh_intranet
+      # Dev-only local credential, not a real secret.
+      DB_PASSWORD: devpassword
+      DB_HOST: db
+      DB_PORT: "5432"
+    depends_on:
+      - db
+
+volumes:
+  postgres_data:
