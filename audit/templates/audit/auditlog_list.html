@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block title %}Journal d'audit – Intranet DGH{% endblock %}
+
+{% block content %}
+<h1 class="h4 mb-3">Journal d'audit</h1>
+
+{% if audit_entries %}
+<div class="table-responsive">
+    <table class="table table-striped align-middle">
+        <thead>
+            <tr>
+                <th>Date et heure</th>
+                <th>Action</th>
+                <th>Utilisateur</th>
+                <th>Document</th>
+                <th>Adresse IP</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for entry in audit_entries %}
+            <tr>
+                <td>{{ entry.timestamp }}</td>
+                <td>{{ entry.get_action_display }}</td>
+                <td>{{ entry.username }}</td>
+                <td>{{ entry.document_title }}</td>
+                <td>{{ entry.ip_address }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% else %}
+<p>Aucune entrée dans le journal d'audit.</p>
+{% endif %}
+{% endblock %}

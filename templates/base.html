@@ -19,6 +19,11 @@
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'announcements:announcement_list' %}">Annonces</a>
                     </li>
+                    {% if user.role == "chef" %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'audit:auditlog_list' %}">Journal d'audit</a>
+                    </li>
+                    {% endif %}
                     {% if user.is_staff %}
                     <li class="nav-item">
                         <a class="nav-link" href="{% url 'admin:index' %}">Administration</a>
