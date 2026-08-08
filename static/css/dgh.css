@@ -1,0 +1,405 @@
+/*
+ * DGH Intranet theme layer over Bootstrap 5.3.8 (CDN).
+ * Overrides Bootstrap's CSS custom properties and adds a small number of
+ * project-specific classes. Bootstrap's own grid/forms/table rules are
+ * left untouched.
+ */
+
+:root {
+  /* Palette, as specified */
+  --dgh-deep: #06323C;
+  --dgh-primary: #0A6C7E;
+  --dgh-primary-rgb: 10, 108, 126;
+  --dgh-accent: #2E9CAB;
+  --dgh-accent-rgb: 46, 156, 171;
+  --dgh-surface: #EAF2F4;
+  --dgh-border: #D3E2E5;
+  --dgh-text: #1B2A2E;
+  --dgh-muted: #5A7379;
+  --dgh-badge-bg: #DCEEF1;
+  --dgh-badge-fg: #04353D;
+
+  /*
+   * Derived tokens — NOT part of the original palette. Added because the
+   * literal values above fail WCAG AA (4.5:1) when used as small text:
+   *   --dgh-accent on --dgh-surface  -> ~2.9:1 (fails; it's ~4.2:1 on
+   *     --dgh-deep, which is its intended use: nav underline, logo mark)
+   *   --dgh-muted  on --dgh-surface  -> ~4.45:1 (just under 4.5:1)
+   * These darker variants keep the same hue family usable as small text
+   * on the light surface without failing AA. --dgh-accent and --dgh-muted
+   * themselves are unchanged and still used verbatim where the original
+   * pairing already passes (dark navbar/footer, badges).
+   */
+  --dgh-accent-text: #237580;      /* ~4.7:1 on --dgh-surface */
+  --dgh-accent-text-rgb: 35, 117, 128;
+  --dgh-muted-text: #4A5E63;       /* ~6.0:1 on --dgh-surface */
+
+  /* Map onto Bootstrap's CSS variables (root-level; see .btn-primary
+     below for why component-level variables also need overriding) */
+  --bs-primary: var(--dgh-primary);
+  --bs-primary-rgb: var(--dgh-primary-rgb);
+  --bs-link-color: var(--dgh-primary);
+  --bs-link-color-rgb: var(--dgh-primary-rgb);
+  --bs-link-hover-color: var(--dgh-accent-text);
+  --bs-link-hover-color-rgb: var(--dgh-accent-text-rgb);
+  --bs-body-bg: var(--dgh-surface);
+  --bs-body-color: var(--dgh-text);
+  --bs-border-color: var(--dgh-border);
+}
+
+/*
+ * Dark mode. Only the --dgh-* tokens are redefined here — the --bs-*
+ * variables above already reference them and repaint automatically.
+ * --dgh-deep is intentionally absent: the navbar/footer are already a
+ * near-black teal and need no dark variant.
+ *
+ * Every pair below is computed against the WCAG relative-luminance
+ * formula, same bar as the light palette (4.5:1 body text, 3:1 focus
+ * ring / non-text UI):
+ *   --dgh-text        on --dgh-surface  -> 11.15:1
+ *   --dgh-muted-text   on --dgh-surface  -> 6.48:1
+ *   --dgh-accent-text  on --dgh-surface  -> 7.36:1  (link colour, see below)
+ *   --dgh-border (non-text UI boundary) on --dgh-surface -> 3.18:1
+ *   --dgh-accent  (focus ring / decorative) on --dgh-deep -> 6.07:1
+ *   --dgh-badge-fg on --dgh-badge-bg     -> 9.18:1
+ *   white on --dgh-primary (buttons, skip-link)           -> 5.01:1
+ *
+ * --dgh-primary is tuned for its BUTTON role (dark enough that the
+ * hardcoded white button/skip-link text stays >=4.5:1), not for body
+ * text — as plain link text on the dark surface it only measures
+ * ~2.55:1. Bootstrap's --bs-link-color maps straight to --dgh-primary,
+ * so that mapping is overridden below to use --dgh-accent-text instead
+ * (7.36:1), which is the one --bs-* exception needed to keep every
+ * live text pair passing AA; --bs-link-hover-color already points at
+ * --dgh-accent-text and needs no separate change. The same inversion
+ * hits .btn-primary's hover/active state, which reuses --dgh-accent-text
+ * as a *background* under white text (1.74:1, fails) — fixed with a
+ * small dark-mode override swapping that text to --dgh-deep (7.90:1).
+ */
+[data-theme="dark"] {
+  --dgh-primary: #147A8C;
+  --dgh-primary-rgb: 20, 122, 140;
+  --dgh-accent: #4FBBC9;
+  --dgh-accent-rgb: 79, 187, 201;
+  --dgh-surface: #1A363E;
+  --dgh-border: #628490;
+  --dgh-text: #E8F1F2;
+  --dgh-muted: #7C9298;
+  --dgh-badge-bg: #143A42;
+  --dgh-badge-fg: #BEE6EC;
+
+  --dgh-accent-text: #6FD3E0;      /* 7.36:1 on --dgh-surface */
+  --dgh-accent-text-rgb: 111, 211, 224;
+  --dgh-muted-text: #A9BCC0;       /* 6.48:1 on --dgh-surface */
+
+  --bs-link-color: var(--dgh-accent-text);
+  --bs-link-color-rgb: var(--dgh-accent-text-rgb);
+}
+
+/* Bright hover/active bg (--dgh-accent-text) needs dark text, not the
+   white used in light mode (white-on-accent-text is ~1.74:1). */
+[data-theme="dark"] .btn-primary {
+  --bs-btn-hover-color: var(--dgh-deep);
+  --bs-btn-active-color: var(--dgh-deep);
+}
+
+/* The official logo has no dark-mode version: keep the masthead light
+   regardless of theme, including its border (which would otherwise
+   pick up the dark --dgh-border via --bs-border-color's cascade). */
+[data-theme="dark"] .dgh-masthead {
+  background-color: #fff;
+  border-bottom-color: #D3E2E5;
+}
+
+/* .dgh-card had no dark variant: it inherited plain white, so dark-mode
+   --dgh-text (pale) rendered pale-on-white on every card (the auth
+   templates in particular are built entirely from .dgh-card). Give it a
+   surface a step lighter than --dgh-surface so cards still read as a
+   raised panel rather than sitting flat on the page background.
+     --dgh-text on --dgh-card (dark)       -> 9.39:1
+     --dgh-muted-text on --dgh-card (dark) -> 5.46:1
+   (--dgh-border against this lighter card bg drops to ~2.5:1; that's a
+   decorative outline, not a text pair, so it isn't held to the same
+   4.5:1/3:1 bar — noting it rather than silently letting it slide.) */
+[data-theme="dark"] .dgh-card {
+  background-color: #22424B;
+}
+
+/*
+ * Bootstrap's .table reads its text/stripe/hover/active colours from
+ * --bs-table-color, --bs-table-striped-color, etc., which the CDN build
+ * points at --bs-emphasis-color (baked to #000 and never re-themed —
+ * Bootstrap's own dark mode keys off [data-bs-theme], an attribute this
+ * project doesn't set). --bs-table-bg needs no override: it already
+ * reads var(--bs-body-bg), which does track --dgh-surface. Same root
+ * cause as .btn-primary above; same fix — override the component-scoped
+ * variables directly. The striped/hover/active backgrounds were
+ * rgba(black, α) for light mode; using rgba(white, α) here so they
+ * lighten rather than darken the already-dark row background.
+ *
+ *   --dgh-text on --dgh-surface (plain rows)                    -> 11.15:1
+ *     (same pair as body text, already computed above)
+ *   --dgh-text on striped-bg: rgba(255,255,255,.06) over
+ *     --dgh-surface renders ~#28424A                             -> 9.30:1
+ *   --dgh-text on hover-bg: rgba(255,255,255,.08) over
+ *     --dgh-surface renders ~#2C464D                             -> 8.75:1
+ *   --dgh-text on active-bg: rgba(255,255,255,.12) over
+ *     --dgh-surface renders ~#354E55                             -> 7.72:1
+ */
+[data-theme="dark"] .table {
+  --bs-table-color: var(--dgh-text);
+  --bs-table-striped-color: var(--dgh-text);
+  --bs-table-striped-bg: rgba(255, 255, 255, 0.06);
+  --bs-table-hover-color: var(--dgh-text);
+  --bs-table-hover-bg: rgba(255, 255, 255, 0.08);
+  --bs-table-active-color: var(--dgh-text);
+  --bs-table-active-bg: rgba(255, 255, 255, 0.12);
+}
+
+/*
+ * Bootstrap's compiled CDN CSS bakes literal hex fallbacks into
+ * component-scoped variables (e.g. .btn-primary's --bs-btn-bg: #0d6efd)
+ * rather than referencing the root --bs-primary variable, so overriding
+ * --bs-primary alone does not retheme buttons. Overriding the
+ * component-scoped variables directly so primary CTA buttons actually
+ * pick up the new palette. Hover/active use --dgh-accent-text rather
+ * than --dgh-accent for the same AA reason noted above (white text on
+ * raw --dgh-accent measures ~3.2:1).
+ */
+.btn-primary {
+  --bs-btn-color: #fff;
+  --bs-btn-bg: var(--dgh-primary);
+  --bs-btn-border-color: var(--dgh-primary);
+  --bs-btn-hover-color: #fff;
+  --bs-btn-hover-bg: var(--dgh-accent-text);
+  --bs-btn-hover-border-color: var(--dgh-accent-text);
+  --bs-btn-active-color: #fff;
+  --bs-btn-active-bg: var(--dgh-accent-text);
+  --bs-btn-active-border-color: var(--dgh-accent-text);
+  --bs-btn-focus-shadow-rgb: var(--dgh-primary-rgb);
+  --bs-btn-disabled-color: #fff;
+  --bs-btn-disabled-bg: var(--dgh-primary);
+  --bs-btn-disabled-border-color: var(--dgh-primary);
+}
+
+/* Typography */
+body {
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  line-height: 1.6;
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+  font-weight: 600;
+}
+
+/* Focus visibility — never remove the outline, only restyle it */
+a:focus-visible,
+button:focus-visible,
+.btn:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+.form-control:focus-visible,
+.form-select:focus-visible,
+.form-check-input:focus-visible {
+  outline: 2px solid var(--dgh-accent-text);
+  outline-offset: 2px;
+}
+
+/* --dgh-accent-text only clears 3:1 against the light --dgh-surface
+   (~4.7:1); against the dark --dgh-navbar background it drops to ~2.56:1.
+   Restore --dgh-accent (~4.2:1 on --dgh-deep) for focusable elements
+   inside the navbar specifically. */
+.dgh-navbar a:focus-visible,
+.dgh-navbar button:focus-visible,
+.dgh-navbar .btn:focus-visible {
+  outline-color: var(--dgh-accent);
+}
+
+/* Same issue, opposite direction: --dgh-accent-text brightens for the
+   dark-mode page surface, but the masthead stays white in both themes,
+   so on it that brightened outline drops to ~1.74:1. --dgh-deep is
+   theme-invariant and stays 13.74:1 on white regardless. */
+.dgh-masthead button:focus-visible {
+  outline-color: var(--dgh-deep);
+}
+
+/* Skip-to-content link */
+.dgh-skip-link {
+  position: absolute;
+  top: -3rem;
+  left: 0;
+  z-index: 1080;
+  padding: 0.5rem 1rem;
+  background-color: var(--dgh-primary);
+  color: #fff;
+  text-decoration: none;
+  border-bottom-right-radius: 0.25rem;
+}
+
+.dgh-skip-link:focus {
+  top: 0;
+}
+
+/* Masthead */
+.dgh-masthead {
+  background-color: #fff;
+  border-bottom: 1px solid var(--dgh-border);
+  padding: 20px 0;
+}
+
+.dgh-masthead .container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dgh-masthead img {
+  max-height: 96px;
+  width: auto;
+  display: block;
+}
+
+/* Navbar */
+.dgh-navbar {
+  background-color: var(--dgh-deep) !important;
+}
+
+.dgh-navbar .navbar-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #fff;
+  font-weight: 600;
+}
+
+.dgh-navbar .nav-link {
+  color: rgba(255, 255, 255, 0.85);
+  border-bottom: 2px solid transparent;
+  padding-bottom: 0.25rem;
+}
+
+.dgh-navbar .nav-link:hover,
+.dgh-navbar .nav-link:focus {
+  color: #fff;
+}
+
+/* Dark-mode toggle — lives in the masthead, which stays white in both
+   themes (see [data-theme="dark"] .dgh-masthead above), so its colours
+   are fixed rather than the navbar's light-on-dark rgba(255,255,255,…):
+     --dgh-deep on white (icon)     -> 13.74:1
+   Hover/focus reuse --dgh-primary, which stays >=3:1 on white in both
+   themes (6.07:1 with its light-mode value, 5.01:1 with its dark-mode
+   value), so no separate dark-mode override is needed here either. */
+.dgh-theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dgh-deep);
+  cursor: pointer;
+}
+
+.dgh-theme-toggle:hover,
+.dgh-theme-toggle:focus {
+  color: var(--dgh-primary);
+}
+
+.dgh-theme-toggle svg {
+  display: block;
+}
+
+/* Only one of the two icons is shown, based on the current theme */
+.dgh-theme-toggle .dgh-icon-moon {
+  display: block;
+}
+
+.dgh-theme-toggle .dgh-icon-sun {
+  display: none;
+}
+
+[data-theme="dark"] .dgh-theme-toggle .dgh-icon-moon {
+  display: none;
+}
+
+[data-theme="dark"] .dgh-theme-toggle .dgh-icon-sun {
+  display: block;
+}
+
+.dgh-navbar .nav-link.active {
+  color: #fff;
+  border-bottom-color: var(--dgh-accent);
+}
+
+/* Page header: title (+ optional muted subtitle) on the left, action on the right */
+.dgh-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+}
+
+.dgh-page-header h1,
+.dgh-page-header .h1,
+.dgh-page-header .h4 {
+  margin-bottom: 0;
+}
+
+.dgh-page-header .dgh-subtitle {
+  display: block;
+  color: var(--dgh-muted-text);
+  font-size: 0.9375rem;
+}
+
+/* Role/category chip */
+.dgh-badge {
+  display: inline-block;
+  padding: 0.25em 0.75em;
+  border-radius: 50rem;
+  background-color: var(--dgh-badge-bg);
+  color: var(--dgh-badge-fg);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+/* Card surface */
+.dgh-card {
+  background-color: #fff;
+  border: 1px solid var(--dgh-border);
+  border-radius: 0.5rem;
+}
+
+/* Centered muted empty-state block */
+.dgh-empty {
+  text-align: center;
+  color: var(--dgh-muted-text);
+  padding: 3rem 1rem;
+}
+
+/* Bootstrap's own xxl breakpoint (>=1400px) widens .container to
+   1320px, which reads as sprawling for this content's density; cap it
+   back to the xl-breakpoint width instead. Narrower breakpoints (which
+   already use smaller Bootstrap-native max-widths) are untouched.
+   Scoped to #main only — the navbar/masthead containers keep the full
+   Bootstrap width so the navbar still spans naturally. */
+@media (min-width: 1400px) {
+  #main.container {
+    max-width: 1140px;
+  }
+}
+
+/* Footer */
+.dgh-footer {
+  background-color: var(--dgh-deep);
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 0.875rem;
+  padding: 1.5rem 0;
+}
