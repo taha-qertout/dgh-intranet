@@ -5,21 +5,19 @@
 {% block content %}
 <div class="row justify-content-center">
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-body">
-                <h1 class="card-title h4 mb-3">Supprimer un document</h1>
-                <p>
-                    Voulez-vous vraiment supprimer le document
-                    « {{ document.title }} » ?
-                </p>
-                <form method="post">
-                    {% csrf_token %}
-                    <a href="{% url 'documents:document_detail' document.pk %}" class="btn btn-secondary">
-                        Annuler
-                    </a>
-                    <button type="submit" class="btn btn-danger">Supprimer</button>
-                </form>
-            </div>
+        <div class="dgh-card p-4">
+            <h1 class="h4 mb-3">Supprimer un document</h1>
+            <p>
+                Voulez-vous vraiment supprimer le document
+                « {{ document.title }} » ?
+            </p>
+            <form method="post">
+                {% csrf_token %}
+                <a href="{% url 'documents:document_detail' document.pk %}" class="btn btn-secondary">
+                    Annuler
+                </a>
+                <button type="submit" class="btn btn-danger">Supprimer</button>
+            </form>
         </div>
     </div>
 </div>

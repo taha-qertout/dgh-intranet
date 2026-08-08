@@ -3,8 +3,8 @@
 {% block title %}Annonces – Intranet DGH{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h1 class="h4 mb-0">Annonces</h1>
+<div class="dgh-page-header">
+    <h1 class="h4">Annonces</h1>
     {% if user.role == "chef" or user.role == "admin" %}
     <a href="{% url 'announcements:announcement_create' %}" class="btn btn-primary">
         Publier une annonce
