@@ -14,3 +14,6 @@ class AnnouncementAdmin(admin.ModelAdmin):
     list_filter = ["department", "is_active"]
     search_fields = ["title"]
     date_hierarchy = "published_at"
+
+    def has_delete_permission(self, request, obj=None):
+        return False

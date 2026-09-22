@@ -1,5 +1,6 @@
+from django.contrib import admin
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from audit.models import AuditLog
@@ -235,7 +236,10 @@ class SoftDeleteTests(AnnouncementsTestBase):
         self.rh_announcement.refresh_from_db()
         self.assertTrue(self.rh_announcement.is_active)
 
-    def test_post_delete_soft_deletes_row_stays_in_db(self):
+    def test_chef_deletes_own_active_departmental_announcement(self):
+        self.assertEqual(self.rh_announcement.posted_by_id, self.chef.pk)
+        self.assertEqual(self.rh_announcement.department_id, self.rh.pk)
+        self.assertTrue(self.rh_announcement.is_active)
         self.client.login(username="chef_test", password=PASSWORD)
         url = reverse(
             "announcements:announcement_delete", args=[self.rh_announcement.pk]
@@ -249,6 +253,112 @@ class SoftDeleteTests(AnnouncementsTestBase):
         self.assertTrue(
             Announcement.objects.filter(pk=self.rh_announcement.pk).exists()
         )
+
+    def test_chef_cannot_delete_another_authors_departmental_announcement(self):
+        other_chef = get_user_model().objects.create_user(
+            username="other_rh_chef",
+            password=PASSWORD,
+            role="chef",
+            department=self.rh,
+        )
+        announcement = Announcement.objects.create(
+            title="Annonce autre Chef RH",
+            body="Contenu RH",
+            department=self.rh,
+            posted_by=other_chef,
+        )
+        self.client.login(username="chef_test", password=PASSWORD)
+        url = reverse("announcements:announcement_delete", args=[announcement.pk])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post(url).status_code, 404)
+        announcement.refresh_from_db()
+        self.assertTrue(announcement.is_active)
+
+    def test_chef_cannot_delete_org_wide_admin_announcement(self):
+        announcement = Announcement.objects.create(
+            title="Annonce direction",
+            body="Contenu général",
+            department=None,
+            posted_by=self.admin,
+        )
+        self.client.login(username="chef_test", password=PASSWORD)
+        url = reverse("announcements:announcement_delete", args=[announcement.pk])
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post(url).status_code, 404)
+        announcement.refresh_from_db()
+        self.assertTrue(announcement.is_active)
+
+    def test_admin_can_soft_delete_any_visible_announcement(self):
+        org_wide = Announcement.objects.create(
+            title="Annonce direction",
+            body="Contenu général",
+            department=None,
+            posted_by=self.admin,
+        )
+        self.client.login(username="admin_test", password=PASSWORD)
+        for announcement in (self.rh_announcement, self.info_announcement, org_wide):
+            url = reverse("announcements:announcement_delete", args=[announcement.pk])
+            self.assertRedirects(
+                self.client.post(url), reverse("announcements:announcement_list")
+            )
+            announcement.refresh_from_db()
+            self.assertFalse(announcement.is_active)
+            self.assertTrue(Announcement.objects.filter(pk=announcement.pk).exists())
+
+    def test_inactive_own_announcement_cannot_be_deleted_again(self):
+        self.rh_announcement.is_active = False
+        self.rh_announcement.save()
+        self.client.login(username="chef_test", password=PASSWORD)
+        url = reverse(
+            "announcements:announcement_delete", args=[self.rh_announcement.pk]
+        )
+        self.assertEqual(self.client.get(url).status_code, 404)
+        self.assertEqual(self.client.post(url).status_code, 404)
+
+    def test_detail_only_offers_delete_to_authorized_user(self):
+        org_wide = Announcement.objects.create(
+            title="Annonce direction",
+            body="Contenu général",
+            department=None,
+            posted_by=self.admin,
+        )
+        other_chef = get_user_model().objects.create_user(
+            username="other_rh_chef",
+            password=PASSWORD,
+            role="chef",
+            department=self.rh,
+        )
+        other_post = Announcement.objects.create(
+            title="Annonce autre Chef RH",
+            body="Contenu RH",
+            department=self.rh,
+            posted_by=other_chef,
+        )
+        self.client.login(username="chef_test", password=PASSWORD)
+        for announcement, should_offer_delete in (
+            (self.rh_announcement, True),
+            (other_post, False),
+            (org_wide, False),
+        ):
+            detail_url = reverse("announcements:announcement_detail", args=[announcement.pk])
+            delete_url = reverse("announcements:announcement_delete", args=[announcement.pk])
+            response = self.client.get(detail_url)
+            self.assertEqual(response.status_code, 200)
+            if should_offer_delete:
+                self.assertContains(response, delete_url)
+            else:
+                self.assertNotContains(response, delete_url)
+
+    def test_django_admin_cannot_hard_delete_announcement(self):
+        request = RequestFactory().get("/admin/core/announcement/")
+        request.user = self.admin
+        model_admin = admin.site._registry[Announcement]
+        self.assertFalse(model_admin.has_delete_permission(request))
+
+        self.client.login(username="admin_test", password=PASSWORD)
+        url = reverse("admin:core_announcement_delete", args=[self.rh_announcement.pk])
+        self.assertEqual(self.client.post(url, {"post": "yes"}).status_code, 403)
+        self.assertTrue(Announcement.objects.filter(pk=self.rh_announcement.pk).exists())
 
     def test_chef_deleting_other_department_announcement_is_404(self):
         self.client.login(username="chef_test", password=PASSWORD)

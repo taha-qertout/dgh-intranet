@@ -20,6 +20,8 @@ Design rationale, data model, and known limitations for the Intranet DGH portal.
 
 This project deliberately targets a small, correctly-architected slice of an intranet portal — authentication, RBAC, document management, announcements, and audit logging — rather than shallow breadth across many half-built features. As a PFA evaluated by a jury, the goal is to demonstrate sound reasoning behind every scope boundary, not to maximize feature count. See the [README](../README.md) for how to get the project running locally.
 
+The completed interface includes a visual redesign, dark mode, and responsive layouts with a collapsing mobile navbar. Chef de Département also has a department-scoped audit view in the portal, while Admin sees the full audit log in Django Admin.
+
 ## Architecture Decision Records
 
 ### ADR-0001: Monolith, no separate API layer
@@ -36,7 +38,7 @@ This project deliberately targets a small, correctly-architected slice of an int
 
 **Why:** Env-var-driven config means switching engines is a `.env` (or Compose `environment:`) edit, not a settings-file rewrite. No SQLite-specific behavior is relied on anywhere in the codebase.
 
-**Status: verified, not just designed.** As of **2026-08-07**, the full test suite (**41/41 tests**) was run via `docker compose exec web python manage.py test accounts documents core` against a real `postgres:17-alpine` container, not SQLite. This is a materially stronger claim than "the config is designed to allow this" — the app has actually been exercised against Postgres, including migrations, and passed.
+**Status: verified, not just designed.** On **2026-08-07**, the then-current **41-test** suite was run via `docker compose exec web python manage.py test accounts documents core` against a real `postgres:17-alpine` container, including migrations. The suite later grew to 48 tests, then to **56 tests** across `accounts`, `documents`, `core`, and `audit`. All 56 passed natively and via Docker/PostgreSQL on **2026-09-22**. This PostgreSQL verification is distinct from a production deployment: Docker still starts Django's development server.
 
 ## Data Model
 
@@ -107,6 +109,8 @@ Three roles: **Admin**, **Chef de Département**, **Employé** — implemented a
 
 **Why not Groups:** Django's permission system (including Groups) is model-level only — it can answer "can this user edit Documents in general," but not "can this user edit *this* Document, because it's in their department." Department-scoped, object-level visibility is the entire point of this app's access control, so Groups would only ever solve half the problem. An explicit `role` field is also more legible in application code than matching against Group names. Admins are additionally flagged `is_staff=True, is_superuser=True` to get Django admin panel access — Groups still appear (empty, unused) in that admin UI because `django.contrib.auth` ships them by default, not because they're part of this app's design.
 
+The portal's document delete view soft deletes any visible document for Admin and own-department documents for Chef. The announcement delete view soft deletes any visible announcement for Admin; Chef may delete only an active announcement they posted in their own department. The delete button follows the same rule. Django Admin disables hard deletion for both Document and Announcement. The [permission matrix](permission-matrix.md) records these final rules alongside the original design history.
+
 ## Two-Layer Permission Enforcement Pattern
 
 Every view touching `Document` or `Announcement` answers two separate questions, deliberately kept as two separate mechanisms rather than one combined check:
@@ -165,7 +169,7 @@ flowchart TD
 | No in-portal audit log visibility for Employé | Chef de Département now has an in-portal audit view (`audit/views.py::AuditLogListView`, gated `allowed_roles = ["chef"]`, `audit/urls.py`, nav link in `templates/base.html` gated on `user.role == "chef"`), scoped to their own department — matching `docs/permission-matrix.md`'s original plan. Added 2026-08-07, covered by `AuditLogListViewTests` (4 tests: own-department visibility, cross-department exclusion, Employé 403, anonymous redirect). Employé still has no audit visibility at all, which remains the deliberate part of the original design — only Admin (via `/admin/`) and Chef (via this view, department-scoped) can see audit entries. |
 | Admin cannot upload documents via the portal | `DocumentUploadView.allowed_roles = ["chef"]` only — Admin's document access is view/download plus deletion, not upload, through the portal UI. Admin can still add rows via `/admin/` directly. |
 | `.env`'s `SECRET_KEY` is a dev-only local value | It must be regenerated before any real deployment; it is gitignored but was never meant to be a production secret. |
-| `prod.py` is configured but never deployed | Hardened settings exist (`DEBUG=False`, HSTS, secure cookies, `SECURE_PROXY_SSL_HEADER`) and pass `manage.py check --deploy`, but this project has only ever actually run via `runserver`/Docker `web`, never behind a real WSGI server + reverse proxy. |
+| `prod.py` is configured but never deployed | Hardened settings exist (`DEBUG=False`, HSTS, secure cookies, `SECURE_PROXY_SSL_HEADER`). SQLite has been used locally and PostgreSQL verified through Docker, but neither setup was a real deployment behind a production WSGI server, reverse proxy, and TLS termination. |
 | Bind-mount executable bit on Windows | `Dockerfile` does `chmod +x entrypoint.sh` at build time, but `web`'s `.:/app` bind mount overlays that with the host copy at runtime. Docker Desktop's WSL2 backend forced a working executable bit on this machine, but that behavior is a property of the Docker Desktop backend, not a guarantee of bind mounts in general — this is a caveat to watch for on a different machine/backend, not a problem that's been solved. |
 
 ## Explicitly Out of Scope
@@ -173,4 +177,5 @@ flowchart TD
 - **Workflow/approval engines** — no document or announcement in this app goes through a multi-step approval chain; every write is immediate, subject only to the RBAC checks above. Out of scope because nothing in the brief calls for staged approvals, and building one would be speculative complexity for a 3-week PFA.
 - **Real email integration** — password reset uses Django's console email backend in dev; there is no SMTP/transactional provider wired up. Out of scope because provisioning real email delivery is an infrastructure decision independent of this app's logic, not a missing feature of the app itself.
 - **Advanced search/analytics** — there is no full-text search, filtering beyond department/category, or reporting dashboard. Out of scope because the core evaluation criteria are RBAC and data integrity, not information retrieval.
-- **Mobile-responsive polish beyond "looks decent"** — Bootstrap 5's default responsive grid is relied on as-is; no custom breakpoints or mobile-specific layouts were built. Out of scope because this is a desktop-first internal tool, not a public-facing or mobile-first product.
+
+**Scope decision revisited:** Mobile polish was initially excluded while the core functions were being built. Once those functions were completed ahead of schedule, the project added a UI redesign with custom responsive styling, a mobile collapsing navbar, and dark mode. The earlier decision remains part of the project history; it no longer describes the final interface.

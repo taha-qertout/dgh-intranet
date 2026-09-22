@@ -1,10 +1,11 @@
 import shutil
 import tempfile
 
+from django.contrib import admin
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http import FileResponse
-from django.test import TestCase, override_settings
+from django.test import RequestFactory, TestCase, override_settings
 from django.urls import reverse
 
 from core.models import Department
@@ -284,6 +285,25 @@ class SoftDeleteTests(DocumentsTestBase):
         self.assertFalse(self.rh_doc.is_active)
         # Unfiltered default manager: proves this is a soft delete, not a
         # real row removal.
+        self.assertTrue(Document.objects.filter(pk=self.rh_doc.pk).exists())
+
+    def test_admin_can_soft_delete_other_department_document(self):
+        self.client.login(username="admin_test", password=PASSWORD)
+        url = reverse("documents:document_delete", args=[self.info_doc.pk])
+        self.assertRedirects(self.client.post(url), reverse("documents:document_list"))
+        self.info_doc.refresh_from_db()
+        self.assertFalse(self.info_doc.is_active)
+        self.assertTrue(Document.objects.filter(pk=self.info_doc.pk).exists())
+
+    def test_django_admin_cannot_hard_delete_document(self):
+        request = RequestFactory().get("/admin/documents/document/")
+        request.user = self.admin
+        model_admin = admin.site._registry[Document]
+        self.assertFalse(model_admin.has_delete_permission(request))
+
+        self.client.login(username="admin_test", password=PASSWORD)
+        url = reverse("admin:documents_document_delete", args=[self.rh_doc.pk])
+        self.assertEqual(self.client.post(url, {"post": "yes"}).status_code, 403)
         self.assertTrue(Document.objects.filter(pk=self.rh_doc.pk).exists())
 
     def test_chef_deleting_other_department_document_is_404(self):

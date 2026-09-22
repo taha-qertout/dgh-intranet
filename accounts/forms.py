@@ -1,5 +1,15 @@
+from django.contrib.auth.forms import AuthenticationForm as DjangoAuthenticationForm
 from django.contrib.auth.forms import SetPasswordForm as DjangoSetPasswordForm
 from django.utils.safestring import mark_safe
+
+
+class AuthenticationForm(DjangoAuthenticationForm):
+    """Use French login labels while retaining Django's authentication fields."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.fields["username"].label = "Nom d’utilisateur"
+        self.fields["password"].label = "Mot de passe"
 
 
 class SetPasswordForm(DjangoSetPasswordForm):

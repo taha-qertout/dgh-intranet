@@ -16,3 +16,6 @@ class DocumentAdmin(admin.ModelAdmin):
     list_filter = ["department", "category", "is_active"]
     search_fields = ["title"]
     date_hierarchy = "uploaded_at"
+
+    def has_delete_permission(self, request, obj=None):
+        return False

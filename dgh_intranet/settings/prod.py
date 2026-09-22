@@ -1,13 +1,12 @@
 """
 Production settings.
 
-Status: configured, not deployed. These settings are written for a real
-deployment but this project has, to date, only run via `manage.py runserver`
-against SQLite in development. A real deployment additionally needs, at
-minimum: a WSGI server (e.g. gunicorn) in front of Django, TLS termination
-(e.g. via a reverse proxy or load balancer), PostgreSQL instead of SQLite,
-and a real email backend (base.py/dev.py currently only console-print
-emails via dev.py's EMAIL_BACKEND). None of that is provisioned here.
+Status: configured, not deployed. Local development has used SQLite, and the
+application and test suite have also been verified through Docker against
+PostgreSQL. Docker currently starts Django's development server. A real
+production deployment behind a production WSGI server, reverse proxy, and
+TLS termination has not been performed. Production email delivery is also
+unconfigured (dev.py uses a console email backend).
 """
 
 from .base import *  # noqa: F401,F403
